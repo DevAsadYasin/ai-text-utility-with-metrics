@@ -165,10 +165,16 @@ The system returns structured JSON responses:
 
 ## Safety Features
 
-The system includes comprehensive safety measures:
+The system includes comprehensive safety measures following industry best practices:
 
-- **Adversarial Input Detection**: Blocks harmful or malicious queries
-- **Prompt Injection Prevention**: Detects and blocks prompt injection attempts
+- **Two-Gate Architecture**: Defense-in-depth with input sanitization and output moderation
+- **Channel Separation**: Distinct `<RULES>`, `<USER>`, and `<CONTEXT>` sections prevent authority blending
+- **Adversarial Input Detection**: Blocks harmful queries and prompt injection attempts
+- **Control Phrase Filtering**: Strips adversarial phrases before prompt construction
+- **Code Block Normalization**: Prevents hidden instructions in code fences
+- **PII Protection**: Detects and redacts email, phone, account numbers, and secrets
+- **Output Masking**: Final responses checked for PII before delivery
+- **Hashed Logging**: All content stored as SHA-256 hashes for compliance
 - **Length Validation**: Prevents abuse through size limits
 - **Pattern Matching**: Identifies suspicious content patterns
 
