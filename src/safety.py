@@ -211,7 +211,33 @@ class SafetyChecker:
         if re.match(r'^[*]+$', stripped[:100]):
             return {'valid': False, 'reason': 'Response contains only special characters'}
         
+        harmful_content = self._check_harmful_content_in_response(stripped)
+        if not harmful_content['safe']:
+            return {'valid': False, 'reason': harmful_content['reason']}
+        
         return {'valid': True, 'reason': 'Valid response format'}
+    
+    def _check_harmful_content_in_response(self, response: str) -> Dict[str, Any]:
+        for pattern in self.compiled_patterns:
+            if pattern.search(response):
+                return {
+                    'safe': False,
+                    'reason': 'Response contains potentially harmful content'
+                }
+        
+        harmful_keywords = [
+            'jailbreak', 'system prompt', 'ignore instructions',
+            'bypass security', 'exploit', 'hack', 'crack'
+        ]
+        response_lower = response.lower()
+        for keyword in harmful_keywords:
+            if keyword in response_lower:
+                return {
+                    'safe': False,
+                    'reason': f'Response contains prohibited content: {keyword}'
+                }
+        
+        return {'safe': True, 'reason': 'Response appears safe'}
     
     def anonymize_id(self, identifier: str, salt: str = None) -> str:
         if not salt:

@@ -14,7 +14,7 @@ A customer support assistant that processes user questions and returns structure
 ## Project Structure
 
 ```
-assignment01/
+ai-text-utility-with-metrics/
 ├── src/
 │   ├── run_query.py          # Main application
 │   ├── api.py                # FastAPI REST API server
@@ -45,8 +45,8 @@ assignment01/
 
 1. **Clone the repository**:
    ```bash
-   git clone <repository-url>
-   cd assignment01
+   git clone https://github.com/DevAsadYasin/ai-text-utility-with-metrics.git
+   cd ai-text-utility-with-metrics
    ```
 
 2. **Create and activate virtual environment**:
@@ -474,8 +474,15 @@ After receiving AI responses, additional safety checks are applied:
   - Phone numbers → `[redacted-phone]`
   - Account numbers → `[redacted-account]`
   - API keys/secrets → `[redacted-secret]`
-- **Output Masking**: Final responses checked for PII before delivery
-- **Invalid Response Detection**: Blocks responses containing only numbers or special characters
+- **Harmful Content Detection**: Validates responses against safety patterns:
+  - Detects jailbreak attempts in responses
+  - Identifies prohibited content (exploit, hack, bypass security)
+  - Blocks responses containing system prompt leaks
+- **Invalid Response Detection**: Blocks responses containing:
+  - Only numbers or numeric characters
+  - Only special characters
+  - Too short or empty responses
+- **Output Masking**: Final responses checked for PII and harmful content before delivery
 - **Hashed Logging**: All content stored as SHA-256 hashes for compliance:
   - `question_hash`: SHA-256 of redacted question
   - `output_hash`: SHA-256 of redacted response
@@ -543,6 +550,9 @@ python tests/test_core.py
 | `OPENROUTER_MODEL` | OpenRouter model name | Optional | `openai/gpt-3.5-turbo` |
 | `GEMINI_MODEL` | Gemini model name | Optional | `gemini-2.5-flash` |
 | `OPENAI_MODEL` | OpenAI model name | Optional | `gpt-3.5-turbo` |
+| `OPENAI_TEMPERATURE` | Temperature for OpenAI (0.0-2.0) | Optional | `0.3` |
+| `GEMINI_TEMPERATURE` | Temperature for Gemini (0.0-2.0) | Optional | `0.3` |
+| `OPENROUTER_TEMPERATURE` | Temperature for OpenRouter (0.0-2.0) | Optional | `0.3` |
 | `PORT` | API server port | Optional | `8000` |
 
 At least one AI provider key is required.

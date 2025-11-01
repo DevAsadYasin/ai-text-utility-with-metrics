@@ -267,13 +267,14 @@ Response Format:
             }
     
     def _call_openai(self, client: Any, model: str, formatted_prompt: str) -> Dict[str, Any]:
+        temperature = float(os.getenv('OPENAI_TEMPERATURE', '0.3'))
         response = client.chat.completions.create(
             model=model,
             messages=[
                 {"role": "system", "content": "You are a helpful assistant that responds only with valid JSON."},
                 {"role": "user", "content": formatted_prompt}
             ],
-            temperature=0.3,
+            temperature=temperature,
             max_tokens=500
         )
         
@@ -288,10 +289,11 @@ Response Format:
         }
     
     def _call_gemini(self, client: Any, formatted_prompt: str) -> Dict[str, Any]:
+        temperature = float(os.getenv('GEMINI_TEMPERATURE', '0.3'))
         response = client.generate_content(
             formatted_prompt,
             generation_config={
-                'temperature': 0.3,
+                'temperature': temperature,
                 'max_output_tokens': 500
             }
         )
@@ -316,13 +318,14 @@ Response Format:
         }
     
     def _call_openrouter(self, client: Any, model: str, formatted_prompt: str) -> Dict[str, Any]:
+        temperature = float(os.getenv('OPENROUTER_TEMPERATURE', '0.3'))
         response = client.chat.completions.create(
             model=model,
             messages=[
                 {"role": "system", "content": "You are a helpful assistant that responds only with valid JSON."},
                 {"role": "user", "content": formatted_prompt}
             ],
-            temperature=0.3,
+            temperature=temperature,
             max_tokens=500
         )
         
