@@ -2,6 +2,10 @@
 
 A customer support assistant that processes user questions and returns structured JSON responses with comprehensive metrics tracking and safety measures.
 
+## Demo
+
+Watch a video demonstration of the application: [Video Demo](https://www.loom.com/share/3cacd4af83af477688a422592b5ec916)
+
 ## Features
 
 - **Structured JSON Responses**: Consistent format with answer, confidence, actions, category, and follow-up fields
