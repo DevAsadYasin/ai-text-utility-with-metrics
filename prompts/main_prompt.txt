@@ -82,5 +82,5 @@ Response:
 </RULES>
 
 <USER>
-{{question}}
+{question}
 </USER>
