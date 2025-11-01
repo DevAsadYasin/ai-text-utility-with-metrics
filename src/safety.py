@@ -2,7 +2,7 @@ import re
 import logging
 import os
 import hashlib
-from typing import Dict, Any, List
+from typing import Dict, Any
 
 logger = logging.getLogger(__name__)
 
@@ -41,29 +41,38 @@ class SafetyChecker:
                 'confidence': 1.0
             }
         
-        if len(question) < self.min_question_length:
+        question_stripped = question.strip()
+        if len(question_stripped) < self.min_question_length:
             return {
                 'safe': False,
                 'reason': 'Question too short',
                 'confidence': 1.0
             }
         
-        if len(question) > self.max_question_length:
+        if len(question_stripped) > self.max_question_length:
             return {
                 'safe': False,
                 'reason': 'Question too long',
                 'confidence': 1.0
             }
         
+        invalid_pattern_result = self._check_invalid_patterns(question_stripped)
+        if not invalid_pattern_result['valid']:
+            return {
+                'safe': False,
+                'reason': invalid_pattern_result['reason'],
+                'confidence': 1.0
+            }
+        
         for pattern in self.compiled_patterns:
-            if pattern.search(question):
+            if pattern.search(question_stripped):
                 return {
                     'safe': False,
                     'reason': f'Detected potentially harmful content',
                     'confidence': 0.8
                 }
         
-        injection_score = self._calculate_injection_score(question)
+        injection_score = self._calculate_injection_score(question_stripped)
         if injection_score > 0.5:
             return {
                 'safe': False,
@@ -76,6 +85,31 @@ class SafetyChecker:
             'reason': 'Input appears safe',
             'confidence': 0.9
         }
+    
+    def _check_invalid_patterns(self, question: str) -> Dict[str, Any]:
+        if not question:
+            return {'valid': False, 'reason': 'Empty question'}
+        
+        stripped = question.strip()
+        
+        if re.match(r'^[\d\s\-\.]+$', stripped):
+            return {'valid': False, 'reason': 'Question contains only numbers or numeric characters'}
+        
+        if re.match(r'^[*]+$', stripped):
+            return {'valid': False, 'reason': 'Question contains only asterisks or special characters'}
+        
+        if re.match(r'^[^a-zA-Z0-9\s]+$', stripped):
+            return {'valid': False, 'reason': 'Question contains only special characters'}
+        
+        if len(set(stripped.replace(' ', ''))) <= 2 and len(stripped) >= 5:
+            return {'valid': False, 'reason': 'Question contains repetitive or meaningless characters'}
+        
+        if len(re.sub(r'\s+', '', stripped)) < 3:
+            alphanumeric_only = re.sub(r'[^a-zA-Z0-9]', '', stripped)
+            if len(alphanumeric_only) < 3:
+                return {'valid': False, 'reason': 'Question lacks meaningful content'}
+        
+        return {'valid': True, 'reason': 'Valid question format'}
     
     def _calculate_injection_score(self, question: str) -> float:
         score = 0.0
@@ -143,6 +177,16 @@ class SafetyChecker:
     def mask_output(self, text: str) -> Dict[str, Any]:
         safe = self.redact_pii(text)
         has_pii = safe != text
+        
+        invalid_response = self._check_invalid_response_patterns(safe)
+        if not invalid_response['valid']:
+            return {
+                'action': 'block',
+                'text': safe,
+                'severity': 'high',
+                'reason': invalid_response['reason']
+            }
+        
         if has_pii:
             return {
                 'action': 'allow-masked',
@@ -154,6 +198,20 @@ class SafetyChecker:
             'text': safe,
             'severity': 'low'
         }
+    
+    def _check_invalid_response_patterns(self, response: str) -> Dict[str, Any]:
+        if not response or len(response.strip()) < 10:
+            return {'valid': False, 'reason': 'Response too short or empty'}
+        
+        stripped = response.strip()
+        
+        if re.match(r'^[\d\s\-\.]+$', stripped[:100]):
+            return {'valid': False, 'reason': 'Response contains only numbers'}
+        
+        if re.match(r'^[*]+$', stripped[:100]):
+            return {'valid': False, 'reason': 'Response contains only special characters'}
+        
+        return {'valid': True, 'reason': 'Valid response format'}
     
     def anonymize_id(self, identifier: str, salt: str = None) -> str:
         if not salt:
