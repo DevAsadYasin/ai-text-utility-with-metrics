@@ -10,3 +10,9 @@ ENV/
 *.csv
 .env
 *.log
+.DS_Store
+*.swp
+*.py~
+.pytest_cache/
+.coverage
+htmlcov/
