@@ -8,9 +8,10 @@ The Multi-Task Text Utility is a customer support assistant system designed to p
 
 1. **Main Application (`src/run_query.py`)**: Core application that handles user queries, API calls, and response processing
 2. **Safety Module (`src/safety.py`)**: Adversarial input detection and content moderation
-3. **Prompt Templates (`prompts/main_prompt.txt`)**: Instruction-based prompts with few-shot examples
-4. **Metrics Logging**: CSV-based logging of tokens, latency, and cost metrics
-5. **Test Suite (`tests/test_core.py`)**: Automated testing for validation and functionality
+3. **Prompt Templates (`prompts/`)**: Instruction-based prompts with few-shot examples (main_prompt.txt, technical_prompt.txt, concise_prompt.txt)
+4. **API Server (`src/api.py`)**: FastAPI REST API server for HTTP access
+5. **Metrics Logging**: CSV-based logging of tokens, latency, cost metrics, and content hashes
+6. **Test Suite (`tests/test_core.py`)**: Automated testing for validation and functionality
 
 ### Data Flow
 
@@ -166,11 +167,6 @@ Following defense-in-depth principles:
 4. **Real-time Learning**: Continuous improvement based on user feedback
 
 ## Technical Trade-offs
-
-### Simplicity vs. Features:
-- **Choice**: Straightforward, single-file main application
-- **Trade-off**: Less modular than multi-file architecture
-- **Mitigation**: Clear separation of concerns within the class
 
 ### Provider Redundancy vs. Complexity:
 - **Choice**: Multiple AI providers for reliability
