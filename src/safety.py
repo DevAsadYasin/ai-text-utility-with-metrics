@@ -1,6 +1,8 @@
 import re
 import logging
-from typing import Dict, Any
+import os
+import hashlib
+from typing import Dict, Any, List
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +26,12 @@ class SafetyChecker:
         ]
         self.max_question_length = 2000
         self.min_question_length = 3
+        
+        self.email_pattern = re.compile(r'\b[\w\.-]+@[\w\.-]+\.\w{2,}\b')
+        self.phone_pattern = re.compile(r'\b\+?\d[\d\-\s]{7,}\d\b')
+        self.account_pattern = re.compile(r'\b\d{2,4}[-\s]?\d{3,}[-\s]?\d{2,}\b')
+        self.secrets_pattern = re.compile(r'(api[_-]?key|secret|token|password|ssn)\s*[:=]\s*\S+', re.IGNORECASE)
+        self.code_fence_pattern = re.compile(r'```(.*?)```', re.DOTALL)
     
     def check_safety(self, question: str) -> Dict[str, Any]:
         if not question or not isinstance(question, str):
@@ -94,3 +102,64 @@ class SafetyChecker:
         score += min(adversarial_count * 0.4, 0.5)
         
         return min(score, 1.0)
+    
+    def sanitize_user_input(self, text: str) -> str:
+        if not text:
+            return ""
+        text = self._strip_control_phrases(text)
+        text = self._literalize_code_blocks(text)
+        return text.strip()
+    
+    def _strip_control_phrases(self, text: str) -> str:
+        control_phrases = [
+            r'ignore\s+(all\s+)?(previous\s+)?(your\s+)?instructions?',
+            r'ignore\s+all\s+previous',
+            r'forget\s+(everything|all)\s+(I\s+said|previous)',
+            r'reveal\s+(system|hidden|your)\s+prompt',
+            r'from\s+now\s+on\s+obey\s+me',
+            r'developer\s+mode',
+            r'jailbreak',
+            r'act\s+as\s+.*?admin'
+        ]
+        for pattern in control_phrases:
+            text = re.sub(pattern, '[blocked-control]', text, flags=re.IGNORECASE)
+        return text
+    
+    def _literalize_code_blocks(self, text: str) -> str:
+        def wrap(match):
+            code = match.group(1).strip()
+            return f"<USER_CODE>\n{code}\n</USER_CODE>"
+        return self.code_fence_pattern.sub(wrap, text)
+    
+    def redact_pii(self, text: str) -> str:
+        if not text:
+            return ""
+        text = self.email_pattern.sub('[redacted-email]', text)
+        text = self.phone_pattern.sub('[redacted-phone]', text)
+        text = self.account_pattern.sub('[redacted-account]', text)
+        text = self.secrets_pattern.sub('[redacted-secret]', text)
+        return text
+    
+    def mask_output(self, text: str) -> Dict[str, Any]:
+        safe = self.redact_pii(text)
+        has_pii = safe != text
+        if has_pii:
+            return {
+                'action': 'allow-masked',
+                'text': safe,
+                'severity': 'medium'
+            }
+        return {
+            'action': 'allow',
+            'text': safe,
+            'severity': 'low'
+        }
+    
+    def anonymize_id(self, identifier: str, salt: str = None) -> str:
+        if not salt:
+            salt = os.getenv('LOG_SALT', 'static-salt')
+        return hashlib.sha256((salt + str(identifier)).encode('utf-8')).hexdigest()
+    
+    def hash_content(self, content: str) -> str:
+        redacted = self.redact_pii(content)
+        return hashlib.sha256(redacted.encode('utf-8')).hexdigest()
